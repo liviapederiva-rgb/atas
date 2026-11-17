@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Atas e Itens</title>
+  <title>Controle de Atas, Preços e Estoque</title>
   <style>
     * {
       box-sizing: border-box;
@@ -16,7 +16,7 @@
       color: #333;
     }
     .container {
-      max-width: 960px;
+      max-width: 1140px;
       margin: 0 auto;
       background: #fff;
       padding: 25px;
@@ -27,12 +27,38 @@
       margin-top: 0;
       color: #1e3a8a;
       font-size: 24px;
+      margin-bottom: 15px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
       border-bottom: 2px solid #e5e7eb;
-      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #1e3a8a;
+      color: #fff;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
     }
     .form-grid {
       display: grid;
-      grid-template-columns: 1fr 2fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 15px;
       margin-bottom: 20px;
     }
@@ -40,23 +66,57 @@
       display: flex;
       flex-direction: column;
     }
-    .full-width {
+    .span-2 {
       grid-column: span 2;
+    }
+    .span-3 {
+      grid-column: span 3;
     }
     label {
       font-weight: 600;
       margin-bottom: 5px;
       font-size: 14px;
     }
-    input {
+    input, select {
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
       font-size: 14px;
+      background-color: #fff;
     }
-    input:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: #2563eb;
+    }
+    input[readonly] {
+      background-color: #f8fafc;
+      color: #1e3a8a;
+      font-weight: 700;
+    }
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      padding: 12px 15px;
+      border-radius: 6px;
+    }
+    .card.green { border-left-color: #16a34a; }
+    .card.amber { border-left-color: #d97706; }
+    .card span {
+      display: block;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .card strong {
+      font-size: 18px;
+      color: #0f172a;
     }
     .form-actions {
       display: flex;
@@ -74,48 +134,18 @@
       display: inline-block;
       transition: background-color 0.2s;
     }
-    .btn-primary {
-      background-color: #2563eb;
-      color: white;
-    }
-    .btn-primary:hover {
-      background-color: #1d4ed8;
-    }
-    .btn-save {
-      background-color: #d97706;
-      color: white;
-    }
-    .btn-save:hover {
-      background-color: #b45309;
-    }
-    .btn-cancel {
-      background-color: #6b7280;
-      color: white;
-    }
-    .btn-cancel:hover {
-      background-color: #4b5563;
-    }
-    .btn-refresh {
-      background-color: #0d9488;
-      color: white;
-    }
-    .btn-refresh:hover {
-      background-color: #0f766e;
-    }
-    .btn-sheets {
-      background-color: #16a34a;
-      color: white;
-    }
-    .btn-sheets:hover {
-      background-color: #15803d;
-    }
-    .btn-export {
-      background-color: #4f46e5;
-      color: white;
-    }
-    .btn-export:hover {
-      background-color: #4338ca;
-    }
+    .btn-primary { background-color: #2563eb; color: white; }
+    .btn-primary:hover { background-color: #1d4ed8; }
+    .btn-save { background-color: #d97706; color: white; }
+    .btn-save:hover { background-color: #b45309; }
+    .btn-cancel { background-color: #6b7280; color: white; }
+    .btn-cancel:hover { background-color: #4b5563; }
+    .btn-refresh { background-color: #0d9488; color: white; }
+    .btn-refresh:hover { background-color: #0f766e; }
+    .btn-sheets { background-color: #16a34a; color: white; }
+    .btn-sheets:hover { background-color: #15803d; }
+    .btn-export { background-color: #4f46e5; color: white; }
+    .btn-export:hover { background-color: #4338ca; }
     .btn-edit {
       background-color: #f59e0b;
       color: white;
@@ -123,23 +153,19 @@
       font-size: 12px;
       margin-right: 4px;
     }
-    .btn-edit:hover {
-      background-color: #d97706;
-    }
+    .btn-edit:hover { background-color: #d97706; }
     .btn-delete {
       background-color: #ef4444;
       color: white;
       padding: 5px 10px;
       font-size: 12px;
     }
-    .btn-delete:hover {
-      background-color: #dc2626;
-    }
+    .btn-delete:hover { background-color: #dc2626; }
     .toolbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 30px;
+      margin-top: 25px;
       margin-bottom: 15px;
       gap: 10px;
       flex-wrap: wrap;
@@ -167,115 +193,244 @@
       border: 1px solid #fecaca;
       display: block;
     }
+    .table-wrapper {
+      overflow-x: auto;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
+      font-size: 14px;
     }
     th, td {
       text-align: left;
-      padding: 12px;
+      padding: 10px 12px;
       border-bottom: 1px solid #e5e7eb;
     }
     th {
       background-color: #f8fafc;
       color: #1e3a8a;
       font-weight: 600;
-    }
-    tr:hover {
-      background-color: #f1f5f9;
-    }
-    tr.editing-row {
-      background-color: #fef3c7;
-    }
-    .actions-cell {
       white-space: nowrap;
     }
+    tr:hover { background-color: #f1f5f9; }
+    tr.editing-row { background-color: #fef3c7; }
+    .badge-stock {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    .badge-low {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .badge-zero {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+    .actions-cell { white-space: nowrap; }
     .empty-msg {
       text-align: center;
       color: #6b7280;
       padding: 20px;
     }
-    @media (max-width: 600px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-      .full-width {
-        grid-column: span 1;
-      }
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .span-2, .span-3 { grid-column: span 1; }
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>Cadastro de Ata e Itens</h1>
+  <h1>Controle de Atas, Preços e Estoque</h1>
 
-  <div id="ataForm">
+  <div class="tabs">
+    <button type="button" class="tab-btn active" onclick="trocarAba('abaEstoque', this)">1. Atas e Estoque</button>
+    <button type="button" class="tab-btn" onclick="trocarAba('abaRetirada', this)">2. Retiradas / Consumo</button>
+  </div>
+
+  <div id="statusMsg" class="status-msg"></div>
+
+  <!-- ABA 1: CADASTRO E ESTOQUE -->
+  <div id="abaEstoque" class="tab-content active">
+    <div class="summary-cards">
+      <div class="card">
+        <span>Valor Total Licitado</span>
+        <strong id="cardTotalLicitado">R$ 0,00</strong>
+      </div>
+      <div class="card amber">
+        <span>Total Já Utilizado</span>
+        <strong id="cardTotalUtilizado">R$ 0,00</strong>
+      </div>
+      <div class="card green">
+        <span>Saldo Financeiro Disponível</span>
+        <strong id="cardSaldoDisponivel">R$ 0,00</strong>
+      </div>
+    </div>
+
     <div class="form-grid">
       <div class="form-group">
         <label for="numeroAta">Número da ATA *</label>
         <input type="text" id="numeroAta" placeholder="Ex: 045/2026">
       </div>
-      
-      <div class="form-group">
+      <div class="form-group span-2">
         <label for="nomeAta">Nome / Objeto da ATA *</label>
-        <input type="text" id="nomeAta" placeholder="Ex: Aquisição de equipamentos de informática">
+        <input type="text" id="nomeAta" placeholder="Ex: Aquisição de material de expediente">
       </div>
-
-      <div class="form-group full-width">
+      <div class="form-group span-3">
         <label for="nomeEmpresa">Nome da Empresa *</label>
         <input type="text" id="nomeEmpresa" placeholder="Ex: Distribuidora Silva Ltda">
       </div>
-
-      <div class="form-group full-width">
+      <div class="form-group span-3">
         <label for="descricaoItem">Descrição do Item *</label>
         <input type="text" id="descricaoItem" placeholder="Ex: Papel A4 75g caixa com 10 resmas">
       </div>
-
       <div class="form-group">
-        <label for="quantidade">Quantidade *</label>
-        <input type="number" id="quantidade" min="1" placeholder="Ex: 50">
+        <label for="quantidadeTotal">Quantidade Total *</label>
+        <input type="number" id="quantidadeTotal" min="1" placeholder="Ex: 70" oninput="calcularPreviewCadastro()">
+      </div>
+      <div class="form-group">
+        <label for="valorUnitario">Valor Unitário (R$) *</label>
+        <input type="number" id="valorUnitario" min="0" step="0.01" placeholder="Ex: 25.50" oninput="calcularPreviewCadastro()">
+      </div>
+      <div class="form-group">
+        <label for="valorTotalPreview">Valor Total do Item</label>
+        <input type="text" id="valorTotalPreview" value="R$ 0,00" readonly>
       </div>
     </div>
 
     <div class="form-actions">
-      <button type="button" id="btnSalvar" class="btn btn-primary" onclick="salvarItem()">+ Adicionar Item</button>
+      <button type="button" id="btnSalvar" class="btn btn-primary" onclick="salvarItem()">+ Adicionar Item na Ata</button>
       <button type="button" id="btnCancelarEdicao" class="btn btn-cancel" style="display: none;" onclick="cancelarEdicao()">Cancelar Edição</button>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="busca" class="search-box" placeholder="Filtrar por ATA, objeto, empresa ou item..." onkeyup="renderizarTabelaItens()">
+      <button type="button" class="btn btn-refresh" onclick="carregarDoSheets()">Atualizar Lista</button>
+      <a href="https://docs.google.com/spreadsheets/d/1_x61VDyNfVrgpnZx9D10gjyy19gNwaGkoyhgX-w8Pzk/edit?gid=0" target="_blank" class="btn btn-sheets">Abrir no Google Sheets</a>
+      <button type="button" class="btn btn-export" onclick="exportarCSV()">Exportar CSV</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Nº ATA</th>
+            <th>Empresa</th>
+            <th>Descrição do Item</th>
+            <th>Qtd. Total</th>
+            <th>Retirado</th>
+            <th>Estoque</th>
+            <th>Valor Unit.</th>
+            <th>Valor Total</th>
+            <th>Saldo (R$)</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaCorpo">
+          <tr><td colspan="10" class="empty-msg">Carregando registros do Google Sheets...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <div class="toolbar">
-    <input type="text" id="busca" class="search-box" placeholder="Filtrar por número da ATA, objeto, empresa ou item..." onkeyup="renderizarTabela()">
-    <button type="button" class="btn btn-refresh" onclick="carregarDoSheets()">Atualizar Lista</button>
-    <a href="https://docs.google.com/spreadsheets/d/1_x61VDyNfVrgpnZx9D10gjyy19gNwaGkoyhgX-w8Pzk/edit?gid=0" target="_blank" class="btn btn-sheets">Abrir no Google Sheets</a>
-    <button type="button" class="btn btn-export" onclick="exportarCSV()">Exportar Planilha (CSV)</button>
+  <!-- ABA 2: RETIRADAS / CONSUMO DE ESTOQUE -->
+  <div id="abaRetirada" class="tab-content">
+    <div class="form-grid">
+      <div class="form-group span-3">
+        <label for="selectItemRetirada">Selecione o Item da Ata *</label>
+        <select id="selectItemRetirada" onchange="atualizarPreviewRetirada()">
+          <option value="">-- Selecione um item cadastrado --</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="estoqueAtualPreview">Saldo Atual em Estoque</label>
+        <input type="text" id="estoqueAtualPreview" value="0" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="valorUnitRetiradaPreview">Valor Unitário</label>
+        <input type="text" id="valorUnitRetiradaPreview" value="R$ 0,00" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="quantidadePega">Quantidade a Pegar *</label>
+        <input type="number" id="quantidadePega" min="1" placeholder="Ex: 10" oninput="atualizarPreviewRetirada()">
+      </div>
+
+      <div class="form-group">
+        <label for="novoSaldoPreview">Estoque Após Retirada</label>
+        <input type="text" id="novoSaldoPreview" value="0" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="valorRetiradaPreview">Valor Desta Retirada</label>
+        <input type="text" id="valorRetiradaPreview" value="R$ 0,00" readonly>
+      </div>
+
+      <div class="form-group">
+        <label for="observacaoRetirada">Secretaria / Observação</label>
+        <input type="text" id="observacaoRetirada" placeholder="Ex: Sec. Educação - Pedido 12">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" onclick="registrarRetirada()">Confirmar Retirada e Descontar Estoque</button>
+    </div>
+
+    <div class="toolbar">
+      <strong>Histórico de Retiradas Realizadas</strong>
+      <button type="button" class="btn btn-refresh" onclick="carregarDoSheets()">Atualizar Histórico</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Nº ATA</th>
+            <th>Empresa</th>
+            <th>Item</th>
+            <th>Qtd. Pega</th>
+            <th>Valor Unit.</th>
+            <th>Total Retirado</th>
+            <th>Observação</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaRetiradasCorpo">
+          <tr><td colspan="8" class="empty-msg">Nenhuma retirada registrada ainda.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
-
-  <div id="statusMsg" class="status-msg"></div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Nº da ATA</th>
-        <th>Nome / Objeto da ATA</th>
-        <th>Empresa</th>
-        <th>Descrição do Item</th>
-        <th>Qtd.</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaCorpo">
-      <tr><td colspan="6" class="empty-msg">Carregando registros do Google Sheets...</td></tr>
-    </tbody>
-  </table>
 </div>
 
 <script>
-  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycby5g0vcc1w68peE9-vSFFXtuvXIqL0UyrM-m3cYoUKmCt6xVRi14-DYeQMZQCXo2brN/exec';
-  let registros = [];
+  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxWKjFs8IWfKdpn7D_n5GCp8FrLIbGIBSS43A8DiNv115Cvhx-_4vTppxtUVvWCOyyF/exec';
+
+  let itens = [];
+  let retiradas = [];
   let editandoRow = null;
   let confirmarExclusaoRow = null;
+
+  function formatarMoeda(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function trocarAba(idAba, botao) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(idAba).classList.add('active');
+    botao.classList.add('active');
+    if (idAba === 'abaRetirada') {
+      preencherSelectItens();
+    }
+  }
 
   function mostrarStatus(texto, tipo) {
     const el = document.getElementById('statusMsg');
@@ -288,15 +443,30 @@
     }, 5000);
   }
 
+  function calcularPreviewCadastro() {
+    const qtd = Number(document.getElementById('quantidadeTotal').value) || 0;
+    const unit = Number(document.getElementById('valorUnitario').value) || 0;
+    document.getElementById('valorTotalPreview').value = formatarMoeda(qtd * unit);
+  }
+
   function carregarDoSheets() {
     fetch(GOOGLE_SHEETS_URL)
       .then(res => res.json())
       .then(dados => {
-        registros = dados;
-        renderizarTabela();
+        if (Array.isArray(dados)) {
+          itens = dados;
+          retiradas = [];
+        } else {
+          itens = dados.itens || [];
+          retiradas = dados.retiradas || [];
+        }
+        renderizarTabelaItens();
+        renderizarTabelaRetiradas();
+        preencherSelectItens();
+        atualizarCardsResumo();
       })
       .catch(() => {
-        renderizarTabela();
+        renderizarTabelaItens();
       });
   }
 
@@ -316,33 +486,61 @@
     }).catch(erro => console.error('Erro ao comunicar com o Google Sheets:', erro));
   }
 
+  function atualizarCardsResumo() {
+    let totalLicitado = 0;
+    let saldoDisponivel = 0;
+
+    itens.forEach(item => {
+      const qtdTotal = Number(item.quantidadeTotal) || 0;
+      const unit = Number(item.valorUnitario) || 0;
+      const saldo = item.saldoEstoque !== undefined ? Number(item.saldoEstoque) : qtdTotal;
+      totalLicitado += qtdTotal * unit;
+      saldoDisponivel += saldo * unit;
+    });
+
+    document.getElementById('cardTotalLicitado').textContent = formatarMoeda(totalLicitado);
+    document.getElementById('cardTotalUtilizado').textContent = formatarMoeda(totalLicitado - saldoDisponivel);
+    document.getElementById('cardSaldoDisponivel').textContent = formatarMoeda(saldoDisponivel);
+  }
+
   function salvarItem() {
     const numeroAta = document.getElementById('numeroAta').value.trim();
     const nomeAta = document.getElementById('nomeAta').value.trim();
     const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim();
     const descricaoItem = document.getElementById('descricaoItem').value.trim();
-    const quantidade = document.getElementById('quantidade').value.trim();
+    const quantidadeTotal = Number(document.getElementById('quantidadeTotal').value);
+    const valorUnitario = Number(document.getElementById('valorUnitario').value);
 
-    if (!numeroAta || !nomeAta || !nomeEmpresa || !descricaoItem || !quantidade) {
-      mostrarStatus('Preencha todos os campos obrigatórios antes de salvar.', 'error');
+    if (!numeroAta || !nomeAta || !nomeEmpresa || !descricaoItem || quantidadeTotal <= 0 || valorUnitario < 0 || isNaN(valorUnitario)) {
+      mostrarStatus('Preencha todos os campos obrigatórios (incluindo quantidade e valor unitário).', 'error');
       return;
     }
 
     if (editandoRow !== null) {
       const rowParaEditar = editandoRow;
-      const index = registros.findIndex(item => item.row === rowParaEditar);
+      const index = itens.findIndex(item => item.row === rowParaEditar);
+      const jaRetirado = index !== -1 ? (Number(itens[index].quantidadeRetirada) || 0) : 0;
+      const novoSaldo = quantidadeTotal - jaRetirado;
+
       if (index !== -1) {
-        registros[index] = {
+        itens[index] = {
           row: rowParaEditar,
           numeroAta,
           nomeAta,
           nomeEmpresa,
           descricaoItem,
-          quantidade
+          quantidadeTotal,
+          valorUnitario,
+          quantidadeRetirada: jaRetirado,
+          saldoEstoque: novoSaldo,
+          valorTotalAta: quantidadeTotal * valorUnitario,
+          valorSaldoRestante: novoSaldo * valorUnitario
         };
       }
       cancelarEdicao(false);
-      renderizarTabela();
+      renderizarTabelaItens();
+      atualizarCardsResumo();
+
       enviarAcaoSheets({
         acao: 'editar',
         row: rowParaEditar,
@@ -350,19 +548,27 @@
         nomeAta,
         nomeEmpresa,
         descricaoItem,
-        quantidade
-      }, 'Alteração salva no Google Sheets!');
+        quantidadeTotal,
+        valorUnitario,
+        quantidadeRetirada: jaRetirado
+      }, 'Item atualizado no Google Sheets!');
     } else {
       const novoItem = {
-        row: registros.length + 2,
+        row: itens.length + 2,
         numeroAta,
         nomeAta,
         nomeEmpresa,
         descricaoItem,
-        quantidade
+        quantidadeTotal,
+        valorUnitario,
+        quantidadeRetirada: 0,
+        saldoEstoque: quantidadeTotal,
+        valorTotalAta: quantidadeTotal * valorUnitario,
+        valorSaldoRestante: quantidadeTotal * valorUnitario
       };
-      registros.push(novoItem);
-      renderizarTabela();
+      itens.push(novoItem);
+      renderizarTabelaItens();
+      atualizarCardsResumo();
 
       enviarAcaoSheets({
         acao: 'criar',
@@ -370,17 +576,20 @@
         nomeAta,
         nomeEmpresa,
         descricaoItem,
-        quantidade
+        quantidadeTotal,
+        valorUnitario
       }, 'Item adicionado e salvo no Google Sheets!');
 
       document.getElementById('descricaoItem').value = '';
-      document.getElementById('quantidade').value = '';
+      document.getElementById('quantidadeTotal').value = '';
+      document.getElementById('valorUnitario').value = '';
+      document.getElementById('valorTotalPreview').value = 'R$ 0,00';
       document.getElementById('descricaoItem').focus();
     }
   }
 
   function editarRegistro(row) {
-    const item = registros.find(reg => reg.row === row);
+    const item = itens.find(reg => reg.row === row);
     if (!item) return;
 
     editandoRow = row;
@@ -388,63 +597,152 @@
     document.getElementById('nomeAta').value = item.nomeAta === '-' ? '' : item.nomeAta;
     document.getElementById('nomeEmpresa').value = item.nomeEmpresa;
     document.getElementById('descricaoItem').value = item.descricaoItem;
-    document.getElementById('quantidade').value = item.quantidade;
+    document.getElementById('quantidadeTotal').value = item.quantidadeTotal;
+    document.getElementById('valorUnitario').value = item.valorUnitario;
+    calcularPreviewCadastro();
 
     const btnSalvar = document.getElementById('btnSalvar');
     btnSalvar.textContent = 'Salvar Alterações';
     btnSalvar.className = 'btn btn-save';
     document.getElementById('btnCancelarEdicao').style.display = 'inline-block';
 
-    renderizarTabela();
+    renderizarTabelaItens();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function cancelarEdicao(limparCampos = true) {
     editandoRow = null;
     const btnSalvar = document.getElementById('btnSalvar');
-    btnSalvar.textContent = '+ Adicionar Item';
+    btnSalvar.textContent = '+ Adicionar Item na Ata';
     btnSalvar.className = 'btn btn-primary';
     document.getElementById('btnCancelarEdicao').style.display = 'none';
 
     if (limparCampos) {
       document.getElementById('descricaoItem').value = '';
-      document.getElementById('quantidade').value = '';
+      document.getElementById('quantidadeTotal').value = '';
+      document.getElementById('valorUnitario').value = '';
+      document.getElementById('valorTotalPreview').value = 'R$ 0,00';
     }
-    renderizarTabela();
+    renderizarTabelaItens();
   }
 
   function excluirRegistro(row) {
     if (confirmarExclusaoRow !== row) {
       confirmarExclusaoRow = row;
-      renderizarTabela();
+      renderizarTabelaItens();
       setTimeout(() => {
         if (confirmarExclusaoRow === row) {
           confirmarExclusaoRow = null;
-          renderizarTabela();
+          renderizarTabelaItens();
         }
       }, 4000);
       return;
     }
 
     confirmarExclusaoRow = null;
-    if (editandoRow === row) {
-      cancelarEdicao();
-    }
+    if (editandoRow === row) cancelarEdicao();
 
-    registros = registros.filter(item => item.row !== row);
-    renderizarTabela();
-    enviarAcaoSheets({
-      acao: 'excluir',
-      row: row
-    }, 'Item excluído do Google Sheets!');
+    itens = itens.filter(item => item.row !== row);
+    renderizarTabelaItens();
+    atualizarCardsResumo();
+    enviarAcaoSheets({ acao: 'excluir', row: row }, 'Item excluído do Google Sheets!');
   }
 
-  function renderizarTabela() {
+  function preencherSelectItens() {
+    const select = document.getElementById('selectItemRetirada');
+    const valorAtual = select.value;
+    select.innerHTML = '<option value="">-- Selecione um item cadastrado --</option>';
+
+    itens.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.row;
+      opt.textContent = `ATA ${item.numeroAta} | ${item.descricaoItem} (${item.nomeEmpresa}) — Estoque: ${item.saldoEstoque} un. | Unit: ${formatarMoeda(item.valorUnitario)}`;
+      select.appendChild(opt);
+    });
+
+    if (valorAtual) select.value = valorAtual;
+    atualizarPreviewRetirada();
+  }
+
+  function atualizarPreviewRetirada() {
+    const row = Number(document.getElementById('selectItemRetirada').value);
+    const qtdPega = Number(document.getElementById('quantidadePega').value) || 0;
+    const item = itens.find(i => i.row === row);
+
+    if (!item) {
+      document.getElementById('estoqueAtualPreview').value = '0';
+      document.getElementById('valorUnitRetiradaPreview').value = 'R$ 0,00';
+      document.getElementById('novoSaldoPreview').value = '0';
+      document.getElementById('valorRetiradaPreview').value = 'R$ 0,00';
+      return;
+    }
+
+    const saldoAtual = Number(item.saldoEstoque) || 0;
+    const unit = Number(item.valorUnitario) || 0;
+    const novoSaldo = saldoAtual - qtdPega;
+
+    document.getElementById('estoqueAtualPreview').value = saldoAtual + ' un.';
+    document.getElementById('valorUnitRetiradaPreview').value = formatarMoeda(unit);
+    document.getElementById('novoSaldoPreview').value = novoSaldo + ' un.';
+    document.getElementById('valorRetiradaPreview').value = formatarMoeda(qtdPega * unit);
+  }
+
+  function registrarRetirada() {
+    const row = Number(document.getElementById('selectItemRetirada').value);
+    const qtdPega = Number(document.getElementById('quantidadePega').value);
+    const observacao = document.getElementById('observacaoRetirada').value.trim();
+
+    if (!row || qtdPega <= 0) {
+      mostrarStatus('Selecione o item da ata e informe uma quantidade válida para retirar.', 'error');
+      return;
+    }
+
+    const item = itens.find(i => i.row === row);
+    if (!item) return;
+
+    if (qtdPega > item.saldoEstoque) {
+      mostrarStatus(`Quantidade indisponível! O estoque atual deste item é de apenas ${item.saldoEstoque} unidades.`, 'error');
+      return;
+    }
+
+    item.quantidadeRetirada = (Number(item.quantidadeRetirada) || 0) + qtdPega;
+    item.saldoEstoque = Number(item.quantidadeTotal) - item.quantidadeRetirada;
+    item.valorSaldoRestante = item.saldoEstoque * Number(item.valorUnitario);
+
+    const agora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    retiradas.push({
+      data: agora,
+      numeroAta: item.numeroAta,
+      nomeEmpresa: item.nomeEmpresa,
+      descricaoItem: item.descricaoItem,
+      quantidadePega: qtdPega,
+      valorUnitario: item.valorUnitario,
+      valorRetirada: qtdPega * Number(item.valorUnitario),
+      observacao: observacao
+    });
+
+    document.getElementById('quantidadePega').value = '';
+    document.getElementById('observacaoRetirada').value = '';
+    preencherSelectItens();
+    renderizarTabelaItens();
+    renderizarTabelaRetiradas();
+    atualizarCardsResumo();
+
+    enviarAcaoSheets({
+      acao: 'retirar',
+      row: row,
+      quantidadePega: qtdPega,
+      data: agora,
+      observacao: observacao
+    }, `Retirada de ${qtdPega} un. registrada! Estoque atualizado para ${item.saldoEstoque} un.`);
+  }
+
+  function renderizarTabelaItens() {
     const termoBusca = document.getElementById('busca').value.toLowerCase();
     const tabelaCorpo = document.getElementById('tabelaCorpo');
     tabelaCorpo.innerHTML = '';
 
-    const filtrados = registros.filter(item =>
+    const filtrados = itens.filter(item =>
       String(item.numeroAta || '').toLowerCase().includes(termoBusca) ||
       String(item.nomeAta || '').toLowerCase().includes(termoBusca) ||
       String(item.nomeEmpresa || '').toLowerCase().includes(termoBusca) ||
@@ -452,22 +750,32 @@
     );
 
     if (filtrados.length === 0) {
-      tabelaCorpo.innerHTML = '<tr><td colspan="6" class="empty-msg">Nenhum item encontrado.</td></tr>';
+      tabelaCorpo.innerHTML = '<tr><td colspan="10" class="empty-msg">Nenhum item encontrado.</td></tr>';
       return;
     }
 
     filtrados.forEach(item => {
       const tr = document.createElement('tr');
-      if (item.row === editandoRow) {
-        tr.className = 'editing-row';
-      }
+      if (item.row === editandoRow) tr.className = 'editing-row';
+
+      const saldo = Number(item.saldoEstoque) || 0;
+      const total = Number(item.quantidadeTotal) || 0;
+      let classeBadge = 'badge-stock';
+      if (saldo === 0) classeBadge = 'badge-stock badge-zero';
+      else if (saldo <= total * 0.25) classeBadge = 'badge-stock badge-low';
+
       const textoExcluir = confirmarExclusaoRow === item.row ? 'Confirmar?' : 'Excluir';
+
       tr.innerHTML = `
         <td><strong>${item.numeroAta}</strong></td>
-        <td>${item.nomeAta || '-'}</td>
         <td>${item.nomeEmpresa}</td>
         <td>${item.descricaoItem}</td>
-        <td>${item.quantidade}</td>
+        <td>${total}</td>
+        <td>${item.quantidadeRetirada || 0}</td>
+        <td><span class="${classeBadge}">${saldo}</span></td>
+        <td>${formatarMoeda(item.valorUnitario)}</td>
+        <td>${formatarMoeda(total * Number(item.valorUnitario))}</td>
+        <td><strong>${formatarMoeda(saldo * Number(item.valorUnitario))}</strong></td>
         <td class="actions-cell">
           <button type="button" class="btn btn-edit" onclick="editarRegistro(${item.row})">Editar</button>
           <button type="button" class="btn btn-delete" onclick="excluirRegistro(${item.row})">${textoExcluir}</button>
@@ -477,20 +785,50 @@
     });
   }
 
+  function renderizarTabelaRetiradas() {
+    const corpo = document.getElementById('tabelaRetiradasCorpo');
+    corpo.innerHTML = '';
+
+    if (retiradas.length === 0) {
+      corpo.innerHTML = '<tr><td colspan="8" class="empty-msg">Nenhuma retirada registrada ainda.</td></tr>';
+      return;
+    }
+
+    retiradas.slice().reverse().forEach(ret => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${ret.data}</td>
+        <td><strong>${ret.numeroAta}</strong></td>
+        <td>${ret.nomeEmpresa}</td>
+        <td>${ret.descricaoItem}</td>
+        <td><strong>-${ret.quantidadePega}</strong></td>
+        <td>${formatarMoeda(ret.valorUnitario)}</td>
+        <td><strong>${formatarMoeda(ret.valorRetirada)}</strong></td>
+        <td>${ret.observacao || '-'}</td>
+      `;
+      corpo.appendChild(tr);
+    });
+  }
+
   function exportarCSV() {
-    if (registros.length === 0) {
+    if (itens.length === 0) {
       mostrarStatus('Não há itens cadastrados para exportar.', 'error');
       return;
     }
 
-    let csv = '\uFEFFNº da ATA;Nome / Objeto da ATA;Empresa;Descrição do Item;Quantidade\n';
-    registros.forEach(item => {
+    let csv = '\uFEFFNº ATA;Objeto;Empresa;Item;Qtd Total;Qtd Retirada;Saldo Estoque;Valor Unitario;Valor Total;Saldo Financeiro\n';
+    itens.forEach(item => {
       const linha = [
         `"${String(item.numeroAta || '').replace(/"/g, '""')}"`,
         `"${String(item.nomeAta || '').replace(/"/g, '""')}"`,
         `"${String(item.nomeEmpresa || '').replace(/"/g, '""')}"`,
         `"${String(item.descricaoItem || '').replace(/"/g, '""')}"`,
-        `"${item.quantidade}"`
+        `"${item.quantidadeTotal}"`,
+        `"${item.quantidadeRetirada || 0}"`,
+        `"${item.saldoEstoque}"`,
+        `"${String(item.valorUnitario || 0).replace('.', ',')}"`,
+        `"${String((item.quantidadeTotal * item.valorUnitario).toFixed(2)).replace('.', ',')}"`,
+        `"${String((item.saldoEstoque * item.valorUnitario).toFixed(2)).replace('.', ',')}"`
       ].join(';');
       csv += linha + '\n';
     });
@@ -499,7 +837,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'controle_atas.csv';
+    a.download = 'controle_atas_estoque.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
