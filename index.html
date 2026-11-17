@@ -291,11 +291,11 @@
       </div>
       <div class="form-group">
         <label for="quantidadeTotal">Quantidade Total *</label>
-        <input type="number" id="quantidadeTotal" min="1" placeholder="Ex: 70" oninput="calcularPreviewCadastro()">
+        <input type="number" id="quantidadeTotal" min="1" placeholder="Ex: 76" oninput="calcularPreviewCadastro()">
       </div>
       <div class="form-group">
         <label for="valorUnitario">Valor Unitário (R$) *</label>
-        <input type="number" id="valorUnitario" min="0" step="0.01" placeholder="Ex: 25.50" oninput="calcularPreviewCadastro()">
+        <input type="text" id="valorUnitario" inputmode="decimal" placeholder="Ex: 1.512,39" oninput="calcularPreviewCadastro()">
       </div>
       <div class="form-group">
         <label for="valorTotalPreview">Valor Total do Item</label>
@@ -418,6 +418,23 @@
   let editandoRow = null;
   let confirmarExclusaoRow = null;
 
+  function lerValorMonetario(texto) {
+    if (typeof texto === 'number') return texto;
+    const limpo = String(texto || '').trim().replace(/\s+/g, '').replace('R$', '');
+    if (!limpo) return NaN;
+    if (limpo.includes(',')) {
+      return Number(limpo.replace(/\./g, '').replace(',', '.'));
+    }
+    return Number(limpo);
+  }
+
+  function formatarNumeroInputBR(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4
+    });
+  }
+
   function formatarMoeda(valor) {
     return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
@@ -445,7 +462,7 @@
 
   function calcularPreviewCadastro() {
     const qtd = Number(document.getElementById('quantidadeTotal').value) || 0;
-    const unit = Number(document.getElementById('valorUnitario').value) || 0;
+    const unit = lerValorMonetario(document.getElementById('valorUnitario').value) || 0;
     document.getElementById('valorTotalPreview').value = formatarMoeda(qtd * unit);
   }
 
@@ -509,10 +526,10 @@
     const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim();
     const descricaoItem = document.getElementById('descricaoItem').value.trim();
     const quantidadeTotal = Number(document.getElementById('quantidadeTotal').value);
-    const valorUnitario = Number(document.getElementById('valorUnitario').value);
+    const valorUnitario = lerValorMonetario(document.getElementById('valorUnitario').value);
 
     if (!numeroAta || !nomeAta || !nomeEmpresa || !descricaoItem || quantidadeTotal <= 0 || valorUnitario < 0 || isNaN(valorUnitario)) {
-      mostrarStatus('Preencha todos os campos obrigatórios (incluindo quantidade e valor unitário).', 'error');
+      mostrarStatus('Preencha todos os campos obrigatórios (incluindo quantidade e valor unitário válido, ex: 1.512,39).', 'error');
       return;
     }
 
@@ -598,7 +615,7 @@
     document.getElementById('nomeEmpresa').value = item.nomeEmpresa;
     document.getElementById('descricaoItem').value = item.descricaoItem;
     document.getElementById('quantidadeTotal').value = item.quantidadeTotal;
-    document.getElementById('valorUnitario').value = item.valorUnitario;
+    document.getElementById('valorUnitario').value = formatarNumeroInputBR(item.valorUnitario);
     calcularPreviewCadastro();
 
     const btnSalvar = document.getElementById('btnSalvar');
