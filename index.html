@@ -261,6 +261,9 @@
 </div>
 
 <script>
+  // COLE AQUI A URL GERADA NO APPS SCRIPT DA PLANILHA:
+  const GOOGLE_SHEETS_URL = 'COLE_SUA_URL_DO_APPS_SCRIPT_AQUI';
+
   let registros = [];
   let editandoId = null;
   let confirmarLimpar = false;
@@ -286,9 +289,22 @@
   function salvarDados() {
     try {
       localStorage.setItem('registrosAtas', JSON.stringify(registros));
-    } catch (e) {
-      // Ignora bloqueio de storage em ambientes sandbox
+    } catch (e) {}
+  }
+
+  function enviarParaSheets(novoItem) {
+    if (!GOOGLE_SHEETS_URL || GOOGLE_SHEETS_URL === 'COLE_SUA_URL_DO_APPS_SCRIPT_AQUI') {
+      return;
     }
+
+    fetch(GOOGLE_SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(novoItem)
+    }).catch(erro => console.error('Erro ao enviar para o Google Sheets:', erro));
   }
 
   function salvarItem() {
@@ -318,24 +334,26 @@
       cancelarEdicao(false);
       salvarDados();
       renderizarTabela();
-      mostrarStatus('Item atualizado com sucesso!', 'success');
+      mostrarStatus('Item atualizado na tela!', 'success');
     } else {
-      registros.push({
+      const novoItem = {
         id: Date.now() + Math.random(),
         numeroAta,
         nomeAta,
         nomeEmpresa,
         descricaoItem,
         quantidade
-      });
+      };
 
+      registros.push(novoItem);
       salvarDados();
       renderizarTabela();
+      enviarParaSheets(novoItem);
 
       document.getElementById('descricaoItem').value = '';
       document.getElementById('quantidade').value = '';
       document.getElementById('descricaoItem').focus();
-      mostrarStatus('Item adicionado com sucesso!', 'success');
+      mostrarStatus('Item adicionado e enviado para o Google Sheets!', 'success');
     }
   }
 
@@ -380,7 +398,7 @@
     registros = registros.filter(item => item.id !== id);
     salvarDados();
     renderizarTabela();
-    mostrarStatus('Item excluído.', 'success');
+    mostrarStatus('Item excluído da tela.', 'success');
   }
 
   function deletarPlanilha() {
@@ -406,7 +424,7 @@
     if (editandoId !== null) cancelarEdicao();
     salvarDados();
     renderizarTabela();
-    mostrarStatus('Toda a planilha foi deletada.', 'success');
+    mostrarStatus('A lista da tela foi limpa.', 'success');
   }
 
   function renderizarTabela() {
