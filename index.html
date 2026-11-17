@@ -70,6 +70,8 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
       transition: background-color 0.2s;
     }
     .btn-primary {
@@ -79,52 +81,19 @@
     .btn-primary:hover {
       background-color: #1d4ed8;
     }
-    .btn-save {
-      background-color: #d97706;
+    .btn-refresh {
+      background-color: #0d9488;
       color: white;
     }
-    .btn-save:hover {
-      background-color: #b45309;
+    .btn-refresh:hover {
+      background-color: #0f766e;
     }
-    .btn-cancel {
-      background-color: #6b7280;
-      color: white;
-    }
-    .btn-cancel:hover {
-      background-color: #4b5563;
-    }
-    .btn-export {
+    .btn-sheets {
       background-color: #10b981;
       color: white;
     }
-    .btn-export:hover {
+    .btn-sheets:hover {
       background-color: #059669;
-    }
-    .btn-clear-all {
-      background-color: #dc2626;
-      color: white;
-    }
-    .btn-clear-all:hover {
-      background-color: #b91c1c;
-    }
-    .btn-edit {
-      background-color: #f59e0b;
-      color: white;
-      padding: 5px 10px;
-      font-size: 12px;
-      margin-right: 4px;
-    }
-    .btn-edit:hover {
-      background-color: #d97706;
-    }
-    .btn-delete {
-      background-color: #ef4444;
-      color: white;
-      padding: 5px 10px;
-      font-size: 12px;
-    }
-    .btn-delete:hover {
-      background-color: #dc2626;
     }
     .toolbar {
       display: flex;
@@ -176,12 +145,6 @@
     tr:hover {
       background-color: #f1f5f9;
     }
-    tr.editing-row {
-      background-color: #fef3c7;
-    }
-    .actions-cell {
-      white-space: nowrap;
-    }
     .empty-msg {
       text-align: center;
       color: #6b7280;
@@ -232,14 +195,13 @@
 
     <div class="form-actions">
       <button type="button" id="btnSalvar" class="btn btn-primary" onclick="salvarItem()">+ Adicionar Item</button>
-      <button type="button" id="btnCancelarEdicao" class="btn btn-cancel" style="display: none;" onclick="cancelarEdicao()">Cancelar Edição</button>
     </div>
   </div>
 
   <div class="toolbar">
     <input type="text" id="busca" class="search-box" placeholder="Filtrar por número da ATA, objeto, empresa ou item..." onkeyup="renderizarTabela()">
-    <button type="button" class="btn btn-export" onclick="exportarCSV()">Exportar Planilha (CSV)</button>
-    <button type="button" id="btnLimparTudo" class="btn btn-clear-all" onclick="deletarPlanilha()">Deletar Planilha</button>
+    <button type="button" class="btn btn-refresh" onclick="carregarDoSheets()">Atualizar Lista</button>
+    <a href="https://docs.google.com/spreadsheets/d/1_x61VDyNfVrgpnZx9D10gjyy19gNwaGkoyhgX-w8Pzk/edit?gid=0" target="_blank" class="btn btn-sheets">Abrir Planilha (Restrita)</a>
   </div>
 
   <div id="statusMsg" class="status-msg"></div>
@@ -252,27 +214,17 @@
         <th>Empresa</th>
         <th>Descrição do Item</th>
         <th>Qtd.</th>
-        <th>Ações</th>
       </tr>
     </thead>
     <tbody id="tabelaCorpo">
+      <tr><td colspan="5" class="empty-msg">Carregando registros do Google Sheets...</td></tr>
     </tbody>
   </table>
 </div>
 
 <script>
-  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyLNxlthqcwcWltMOt96FA9y4UUh1cLQWSsBwSFN9XLTn29d0lLm-QSApaQC4GD8Wxg/exec';
-
+  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzEWYDj6oxevvtlMYSn2JQikhHcsY7vbl9BGI4j18-C_visWNm-so2cGOLeNjXco_st/exec';
   let registros = [];
-  let editandoId = null;
-  let confirmarLimpar = false;
-
-  try {
-    const salvos = localStorage.getItem('registrosAtas');
-    if (salvos) registros = JSON.parse(salvos);
-  } catch (e) {
-    registros = [];
-  }
 
   function mostrarStatus(texto, tipo) {
     const el = document.getElementById('statusMsg');
@@ -285,15 +237,19 @@
     }, 5000);
   }
 
-  function salvarDados() {
-    try {
-      localStorage.setItem('registrosAtas', JSON.stringify(registros));
-    } catch (e) {}
+  function carregarDoSheets() {
+    fetch(GOOGLE_SHEETS_URL)
+      .then(res => res.json())
+      .then(dados => {
+        registros = dados;
+        renderizarTabela();
+      })
+      .catch(() => {
+        renderizarTabela();
+      });
   }
 
   function enviarParaSheets(novoItem) {
-    if (!GOOGLE_SHEETS_URL) return;
-
     const formData = new URLSearchParams();
     formData.append('numeroAta', novoItem.numeroAta);
     formData.append('nomeAta', novoItem.nomeAta);
@@ -305,7 +261,9 @@
       method: 'POST',
       mode: 'no-cors',
       body: formData
-    }).catch(erro => console.error('Erro ao enviar para o Google Sheets:', erro));
+    }).then(() => {
+      setTimeout(carregarDoSheets, 1500);
+    }).catch(erro => console.error('Erro ao enviar:', erro));
   }
 
   function salvarItem() {
@@ -320,112 +278,15 @@
       return;
     }
 
-    if (editandoId !== null) {
-      const index = registros.findIndex(item => item.id === editandoId);
-      if (index !== -1) {
-        registros[index] = {
-          id: editandoId,
-          numeroAta,
-          nomeAta,
-          nomeEmpresa,
-          descricaoItem,
-          quantidade
-        };
-      }
-      cancelarEdicao(false);
-      salvarDados();
-      renderizarTabela();
-      mostrarStatus('Item atualizado na tela!', 'success');
-    } else {
-      const novoItem = {
-        id: Date.now() + Math.random(),
-        numeroAta,
-        nomeAta,
-        nomeEmpresa,
-        descricaoItem,
-        quantidade
-      };
-
-      registros.push(novoItem);
-      salvarDados();
-      renderizarTabela();
-      enviarParaSheets(novoItem);
-
-      document.getElementById('descricaoItem').value = '';
-      document.getElementById('quantidade').value = '';
-      document.getElementById('descricaoItem').focus();
-      mostrarStatus('Item adicionado e enviado para o Google Sheets!', 'success');
-    }
-  }
-
-  function editarRegistro(id) {
-    const item = registros.find(reg => reg.id === id);
-    if (!item) return;
-
-    editandoId = id;
-    document.getElementById('numeroAta').value = item.numeroAta;
-    document.getElementById('nomeAta').value = item.nomeAta === '-' ? '' : item.nomeAta;
-    document.getElementById('nomeEmpresa').value = item.nomeEmpresa;
-    document.getElementById('descricaoItem').value = item.descricaoItem;
-    document.getElementById('quantidade').value = item.quantidade;
-
-    const btnSalvar = document.getElementById('btnSalvar');
-    btnSalvar.textContent = 'Salvar Alterações';
-    btnSalvar.className = 'btn btn-save';
-    document.getElementById('btnCancelarEdicao').style.display = 'inline-block';
-
+    const novoItem = { numeroAta, nomeAta, nomeEmpresa, descricaoItem, quantidade };
+    registros.push(novoItem);
     renderizarTabela();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+    enviarParaSheets(novoItem);
 
-  function cancelarEdicao(limparTodosCampos = true) {
-    editandoId = null;
-    const btnSalvar = document.getElementById('btnSalvar');
-    btnSalvar.textContent = '+ Adicionar Item';
-    btnSalvar.className = 'btn btn-primary';
-    document.getElementById('btnCancelarEdicao').style.display = 'none';
-
-    if (limparTodosCampos) {
-      document.getElementById('descricaoItem').value = '';
-      document.getElementById('quantidade').value = '';
-    }
-    renderizarTabela();
-  }
-
-  function excluirRegistro(id) {
-    if (editandoId === id) {
-      cancelarEdicao();
-    }
-    registros = registros.filter(item => item.id !== id);
-    salvarDados();
-    renderizarTabela();
-    mostrarStatus('Item excluído da tela.', 'success');
-  }
-
-  function deletarPlanilha() {
-    if (registros.length === 0) {
-      mostrarStatus('A planilha já está vazia.', 'error');
-      return;
-    }
-
-    const btn = document.getElementById('btnLimparTudo');
-    if (!confirmarLimpar) {
-      confirmarLimpar = true;
-      btn.textContent = 'Confirmar Exclusão?';
-      setTimeout(() => {
-        confirmarLimpar = false;
-        btn.textContent = 'Deletar Planilha';
-      }, 4000);
-      return;
-    }
-
-    confirmarLimpar = false;
-    btn.textContent = 'Deletar Planilha';
-    registros = [];
-    if (editandoId !== null) cancelarEdicao();
-    salvarDados();
-    renderizarTabela();
-    mostrarStatus('A lista da tela foi limpa.', 'success');
+    document.getElementById('descricaoItem').value = '';
+    document.getElementById('quantidade').value = '';
+    document.getElementById('descricaoItem').focus();
+    mostrarStatus('Item salvo diretamente no Google Sheets!', 'success');
   }
 
   function renderizarTabela() {
@@ -434,67 +295,31 @@
     tabelaCorpo.innerHTML = '';
 
     const filtrados = registros.filter(item =>
-      (item.numeroAta || '').toLowerCase().includes(termoBusca) ||
-      (item.nomeAta || '').toLowerCase().includes(termoBusca) ||
-      (item.nomeEmpresa || '').toLowerCase().includes(termoBusca) ||
-      (item.descricaoItem || '').toLowerCase().includes(termoBusca)
+      String(item.numeroAta || '').toLowerCase().includes(termoBusca) ||
+      String(item.nomeAta || '').toLowerCase().includes(termoBusca) ||
+      String(item.nomeEmpresa || '').toLowerCase().includes(termoBusca) ||
+      String(item.descricaoItem || '').toLowerCase().includes(termoBusca)
     );
 
     if (filtrados.length === 0) {
-      tabelaCorpo.innerHTML = '<tr><td colspan="6" class="empty-msg">Nenhum item encontrado.</td></tr>';
+      tabelaCorpo.innerHTML = '<tr><td colspan="5" class="empty-msg">Nenhum item encontrado.</td></tr>';
       return;
     }
 
     filtrados.forEach(item => {
       const tr = document.createElement('tr');
-      if (item.id === editandoId) {
-        tr.className = 'editing-row';
-      }
       tr.innerHTML = `
         <td><strong>${item.numeroAta}</strong></td>
         <td>${item.nomeAta || '-'}</td>
         <td>${item.nomeEmpresa}</td>
         <td>${item.descricaoItem}</td>
         <td>${item.quantidade}</td>
-        <td class="actions-cell">
-          <button type="button" class="btn btn-edit" onclick="editarRegistro(${item.id})">Editar</button>
-          <button type="button" class="btn btn-delete" onclick="excluirRegistro(${item.id})">Excluir</button>
-        </td>
       `;
       tabelaCorpo.appendChild(tr);
     });
   }
 
-  function exportarCSV() {
-    if (registros.length === 0) {
-      mostrarStatus('Não há itens cadastrados para exportar.', 'error');
-      return;
-    }
-
-    let csv = '\uFEFFNº da ATA;Nome / Objeto da ATA;Empresa;Descrição do Item;Quantidade\n';
-    registros.forEach(item => {
-      const linha = [
-        `"${(item.numeroAta || '').replace(/"/g, '""')}"`,
-        `"${(item.nomeAta || '').replace(/"/g, '""')}"`,
-        `"${(item.nomeEmpresa || '').replace(/"/g, '""')}"`,
-        `"${(item.descricaoItem || '').replace(/"/g, '""')}"`,
-        `"${item.quantidade}"`
-      ].join(';');
-      csv += linha + '\n';
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'controle_atas.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  renderizarTabela();
+  carregarDoSheets();
 </script>
 
 </body>
