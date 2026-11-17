@@ -81,6 +81,20 @@
     .btn-primary:hover {
       background-color: #1d4ed8;
     }
+    .btn-save {
+      background-color: #d97706;
+      color: white;
+    }
+    .btn-save:hover {
+      background-color: #b45309;
+    }
+    .btn-cancel {
+      background-color: #6b7280;
+      color: white;
+    }
+    .btn-cancel:hover {
+      background-color: #4b5563;
+    }
     .btn-refresh {
       background-color: #0d9488;
       color: white;
@@ -101,6 +115,25 @@
     }
     .btn-export:hover {
       background-color: #4338ca;
+    }
+    .btn-edit {
+      background-color: #f59e0b;
+      color: white;
+      padding: 5px 10px;
+      font-size: 12px;
+      margin-right: 4px;
+    }
+    .btn-edit:hover {
+      background-color: #d97706;
+    }
+    .btn-delete {
+      background-color: #ef4444;
+      color: white;
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    .btn-delete:hover {
+      background-color: #dc2626;
     }
     .toolbar {
       display: flex;
@@ -152,6 +185,12 @@
     tr:hover {
       background-color: #f1f5f9;
     }
+    tr.editing-row {
+      background-color: #fef3c7;
+    }
+    .actions-cell {
+      white-space: nowrap;
+    }
     .empty-msg {
       text-align: center;
       color: #6b7280;
@@ -202,6 +241,7 @@
 
     <div class="form-actions">
       <button type="button" id="btnSalvar" class="btn btn-primary" onclick="salvarItem()">+ Adicionar Item</button>
+      <button type="button" id="btnCancelarEdicao" class="btn btn-cancel" style="display: none;" onclick="cancelarEdicao()">Cancelar Edição</button>
     </div>
   </div>
 
@@ -222,17 +262,20 @@
         <th>Empresa</th>
         <th>Descrição do Item</th>
         <th>Qtd.</th>
+        <th>Ações</th>
       </tr>
     </thead>
     <tbody id="tabelaCorpo">
-      <tr><td colspan="5" class="empty-msg">Carregando registros do Google Sheets...</td></tr>
+      <tr><td colspan="6" class="empty-msg">Carregando registros do Google Sheets...</td></tr>
     </tbody>
   </table>
 </div>
 
 <script>
-  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzEWYDj6oxevvtlMYSn2JQikhHcsY7vbl9BGI4j18-C_visWNm-so2cGOLeNjXco_st/exec';
+  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycby5g0vcc1w68peE9-vSFFXtuvXIqL0UyrM-m3cYoUKmCt6xVRi14-DYeQMZQCXo2brN/exec';
   let registros = [];
+  let editandoRow = null;
+  let confirmarExclusaoRow = null;
 
   function mostrarStatus(texto, tipo) {
     const el = document.getElementById('statusMsg');
@@ -257,21 +300,20 @@
       });
   }
 
-  function enviarParaSheets(novoItem) {
+  function enviarAcaoSheets(parametros, mensagemSucesso) {
     const formData = new URLSearchParams();
-    formData.append('numeroAta', novoItem.numeroAta);
-    formData.append('nomeAta', novoItem.nomeAta);
-    formData.append('nomeEmpresa', novoItem.nomeEmpresa);
-    formData.append('descricaoItem', novoItem.descricaoItem);
-    formData.append('quantidade', novoItem.quantidade);
+    for (const chave in parametros) {
+      formData.append(chave, parametros[chave]);
+    }
 
     fetch(GOOGLE_SHEETS_URL, {
       method: 'POST',
       mode: 'no-cors',
       body: formData
     }).then(() => {
+      mostrarStatus(mensagemSucesso, 'success');
       setTimeout(carregarDoSheets, 1500);
-    }).catch(erro => console.error('Erro ao enviar:', erro));
+    }).catch(erro => console.error('Erro ao comunicar com o Google Sheets:', erro));
   }
 
   function salvarItem() {
@@ -286,15 +328,115 @@
       return;
     }
 
-    const novoItem = { numeroAta, nomeAta, nomeEmpresa, descricaoItem, quantidade };
-    registros.push(novoItem);
-    renderizarTabela();
-    enviarParaSheets(novoItem);
+    if (editandoRow !== null) {
+      const rowParaEditar = editandoRow;
+      const index = registros.findIndex(item => item.row === rowParaEditar);
+      if (index !== -1) {
+        registros[index] = {
+          row: rowParaEditar,
+          numeroAta,
+          nomeAta,
+          nomeEmpresa,
+          descricaoItem,
+          quantidade
+        };
+      }
+      cancelarEdicao(false);
+      renderizarTabela();
+      enviarAcaoSheets({
+        acao: 'editar',
+        row: rowParaEditar,
+        numeroAta,
+        nomeAta,
+        nomeEmpresa,
+        descricaoItem,
+        quantidade
+      }, 'Alteração salva no Google Sheets!');
+    } else {
+      const novoItem = {
+        row: registros.length + 2,
+        numeroAta,
+        nomeAta,
+        nomeEmpresa,
+        descricaoItem,
+        quantidade
+      };
+      registros.push(novoItem);
+      renderizarTabela();
 
-    document.getElementById('descricaoItem').value = '';
-    document.getElementById('quantidade').value = '';
-    document.getElementById('descricaoItem').focus();
-    mostrarStatus('Item salvo diretamente no Google Sheets!', 'success');
+      enviarAcaoSheets({
+        acao: 'criar',
+        numeroAta,
+        nomeAta,
+        nomeEmpresa,
+        descricaoItem,
+        quantidade
+      }, 'Item adicionado e salvo no Google Sheets!');
+
+      document.getElementById('descricaoItem').value = '';
+      document.getElementById('quantidade').value = '';
+      document.getElementById('descricaoItem').focus();
+    }
+  }
+
+  function editarRegistro(row) {
+    const item = registros.find(reg => reg.row === row);
+    if (!item) return;
+
+    editandoRow = row;
+    document.getElementById('numeroAta').value = item.numeroAta;
+    document.getElementById('nomeAta').value = item.nomeAta === '-' ? '' : item.nomeAta;
+    document.getElementById('nomeEmpresa').value = item.nomeEmpresa;
+    document.getElementById('descricaoItem').value = item.descricaoItem;
+    document.getElementById('quantidade').value = item.quantidade;
+
+    const btnSalvar = document.getElementById('btnSalvar');
+    btnSalvar.textContent = 'Salvar Alterações';
+    btnSalvar.className = 'btn btn-save';
+    document.getElementById('btnCancelarEdicao').style.display = 'inline-block';
+
+    renderizarTabela();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelarEdicao(limparCampos = true) {
+    editandoRow = null;
+    const btnSalvar = document.getElementById('btnSalvar');
+    btnSalvar.textContent = '+ Adicionar Item';
+    btnSalvar.className = 'btn btn-primary';
+    document.getElementById('btnCancelarEdicao').style.display = 'none';
+
+    if (limparCampos) {
+      document.getElementById('descricaoItem').value = '';
+      document.getElementById('quantidade').value = '';
+    }
+    renderizarTabela();
+  }
+
+  function excluirRegistro(row) {
+    if (confirmarExclusaoRow !== row) {
+      confirmarExclusaoRow = row;
+      renderizarTabela();
+      setTimeout(() => {
+        if (confirmarExclusaoRow === row) {
+          confirmarExclusaoRow = null;
+          renderizarTabela();
+        }
+      }, 4000);
+      return;
+    }
+
+    confirmarExclusaoRow = null;
+    if (editandoRow === row) {
+      cancelarEdicao();
+    }
+
+    registros = registros.filter(item => item.row !== row);
+    renderizarTabela();
+    enviarAcaoSheets({
+      acao: 'excluir',
+      row: row
+    }, 'Item excluído do Google Sheets!');
   }
 
   function renderizarTabela() {
@@ -310,18 +452,26 @@
     );
 
     if (filtrados.length === 0) {
-      tabelaCorpo.innerHTML = '<tr><td colspan="5" class="empty-msg">Nenhum item encontrado.</td></tr>';
+      tabelaCorpo.innerHTML = '<tr><td colspan="6" class="empty-msg">Nenhum item encontrado.</td></tr>';
       return;
     }
 
     filtrados.forEach(item => {
       const tr = document.createElement('tr');
+      if (item.row === editandoRow) {
+        tr.className = 'editing-row';
+      }
+      const textoExcluir = confirmarExclusaoRow === item.row ? 'Confirmar?' : 'Excluir';
       tr.innerHTML = `
         <td><strong>${item.numeroAta}</strong></td>
         <td>${item.nomeAta || '-'}</td>
         <td>${item.nomeEmpresa}</td>
         <td>${item.descricaoItem}</td>
         <td>${item.quantidade}</td>
+        <td class="actions-cell">
+          <button type="button" class="btn btn-edit" onclick="editarRegistro(${item.row})">Editar</button>
+          <button type="button" class="btn btn-delete" onclick="excluirRegistro(${item.row})">${textoExcluir}</button>
+        </td>
       `;
       tabelaCorpo.appendChild(tr);
     });
