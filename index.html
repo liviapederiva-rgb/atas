@@ -261,7 +261,7 @@
 </div>
 
 <script>
-  const GOOGLE_SHEETS_URL = 'https://script.google.com/a/macros/lajeado.rs.gov.br/s/AKfycbyoNC052SyQjmOdECHDY-ViA2fboiPdh6acrGCqJ7ntxcXpR310apqUJXvRuK-i_1SU/exec';
+  const GOOGLE_SHEETS_URL = 'https://script.google.com/a/macros/lajeado.rs.gov.br/s/AKfycbwY-RK1NdXRD06m-OrqMiSP2Si-c5MCRidOeQOkIsJx5W67jz5h7aLgk5ZJhJN6fdcY/exec';
 
   let registros = [];
   let editandoId = null;
@@ -294,13 +294,17 @@
   function enviarParaSheets(novoItem) {
     if (!GOOGLE_SHEETS_URL) return;
 
+    const formData = new URLSearchParams();
+    formData.append('numeroAta', novoItem.numeroAta);
+    formData.append('nomeAta', novoItem.nomeAta);
+    formData.append('nomeEmpresa', novoItem.nomeEmpresa);
+    formData.append('descricaoItem', novoItem.descricaoItem);
+    formData.append('quantidade', novoItem.quantidade);
+
     fetch(GOOGLE_SHEETS_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(novoItem)
+      body: formData
     }).catch(erro => console.error('Erro ao enviar para o Google Sheets:', erro));
   }
 
