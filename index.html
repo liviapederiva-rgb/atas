@@ -412,7 +412,8 @@
 </div>
 
 <script>
-  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyGkTuMCSTbYW7Nt-QrCANoIiRCKMt8bH0NrxoJCeBAjDg1f8fEinMIpcvsc0y9f9tM/exec';
+  const GOOGLE_SHEETS_BASE_URL = 'https://script.google.com/macros/s/AKfycbyGkTuMCSTbYW7Nt-QrCANoIiRCKMt8bH0NrxoJCeBAjDg1f8fEinMIpcvsc0y9f9tM/exec';
+  const GOOGLE_SHEETS_GET_URL = GOOGLE_SHEETS_BASE_URL + '?api=1';
 
   let itens = [];
   let retiradas = [];
@@ -469,7 +470,7 @@
   }
 
   function carregarDoSheets() {
-    fetch(GOOGLE_SHEETS_URL, {
+    fetch(GOOGLE_SHEETS_GET_URL, {
       method: 'GET',
       redirect: 'follow'
     })
@@ -492,7 +493,7 @@
       })
       .catch(erro => {
         console.error('Erro ao carregar do Sheets:', erro);
-        mostrarStatus('Não foi possível ler os dados dessa URL. Verifique se ela retorna JSON ou abra diretamente o link do Apps Script.', 'error');
+        mostrarStatus('Não foi possível ler os dados dessa URL. Verifique se você implantou a nova versão do Apps Script.', 'error');
         renderizarTabelaItens();
       });
   }
@@ -503,7 +504,7 @@
       formData.append(chave, parametros[chave]);
     }
 
-    fetch(GOOGLE_SHEETS_URL, {
+    fetch(GOOGLE_SHEETS_BASE_URL, {
       method: 'POST',
       mode: 'no-cors',
       body: formData
