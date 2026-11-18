@@ -400,10 +400,11 @@
             <th>Valor Unit.</th>
             <th>Total Retirado</th>
             <th>Observação</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody id="tabelaRetiradasCorpo">
-          <tr><td colspan="8" class="empty-msg">Nenhuma retirada registrada ainda.</td></tr>
+          <tr><td colspan="9" class="empty-msg">Nenhuma retirada registrada ainda.</td></tr>
         </tbody>
       </table>
     </div>
@@ -411,12 +412,13 @@
 </div>
 
 <script>
-  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxvmSjPy5pajvq3xCqYNlVEJ7JdVJWozgLDMNTNiOgn8jTfFLbqZzKlLXwZMev6Hj11/exec';
+  const GOOGLE_SHEETS_URL = 'https://script.google.com/a/macros/lajeado.rs.gov.br/s/AKfycbwkkQL1JRWVs17jAeEIfQeeLKNwW_PeKDGzg7F9FO_ilOfOJIjIPDgjVwm9_YJ0aoeD/exec';
 
   let itens = [];
   let retiradas = [];
   let editandoRow = null;
   let confirmarExclusaoRow = null;
+  let confirmarExclusaoRetiradaIdx = null;
 
   function lerValorMonetario(texto) {
     if (typeof texto === 'number') return texto;
@@ -728,6 +730,7 @@
 
     const agora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     retiradas.push({
+      row: retiradas.length + 2,
       data: agora,
       numeroAta: item.numeroAta,
       nomeEmpresa: item.nomeEmpresa,
@@ -752,6 +755,47 @@
       data: agora,
       observacao: observacao
     }, `Retirada de ${qtdPega} un. registrada! Estoque atualizado para ${item.saldoEstoque} un.`);
+  }
+
+  function excluirRetirada(index, rowSheet) {
+    if (confirmarExclusaoRetiradaIdx !== index) {
+      confirmarExclusaoRetiradaIdx = index;
+      renderizarTabelaRetiradas();
+      setTimeout(() => {
+        if (confirmarExclusaoRetiradaIdx === index) {
+          confirmarExclusaoRetiradaIdx = null;
+          renderizarTabelaRetiradas();
+        }
+      }, 4000);
+      return;
+    }
+
+    confirmarExclusaoRetiradaIdx = null;
+    const retirada = retiradas[index];
+    if (!retirada) return;
+
+    const item = itens.find(i =>
+      String(i.numeroAta) === String(retirada.numeroAta) &&
+      String(i.nomeEmpresa) === String(retirada.nomeEmpresa) &&
+      String(i.descricaoItem) === String(retirada.descricaoItem)
+    );
+
+    if (item) {
+      item.quantidadeRetirada = Math.max(0, (Number(item.quantidadeRetirada) || 0) - Number(retirada.quantidadePega));
+      item.saldoEstoque = Number(item.quantidadeTotal) - item.quantidadeRetirada;
+      item.valorSaldoRestante = item.saldoEstoque * Number(item.valorUnitario);
+    }
+
+    retiradas.splice(index, 1);
+    renderizarTabelaRetiradas();
+    renderizarTabelaItens();
+    preencherSelectItens();
+    atualizarCardsResumo();
+
+    enviarAcaoSheets({
+      acao: 'excluir_retirada',
+      row: rowSheet
+    }, 'Retirada excluída e saldo estornado ao estoque!');
   }
 
   function renderizarTabelaItens() {
@@ -807,11 +851,15 @@
     corpo.innerHTML = '';
 
     if (retiradas.length === 0) {
-      corpo.innerHTML = '<tr><td colspan="8" class="empty-msg">Nenhuma retirada registrada ainda.</td></tr>';
+      corpo.innerHTML = '<tr><td colspan="9" class="empty-msg">Nenhuma retirada registrada ainda.</td></tr>';
       return;
     }
 
-    retiradas.slice().reverse().forEach(ret => {
+    retiradas.slice().reverse().forEach((ret, revIdx) => {
+      const realIndex = retiradas.length - 1 - revIdx;
+      const rowSheet = ret.row || (realIndex + 2);
+      const textoBtn = confirmarExclusaoRetiradaIdx === realIndex ? 'Confirmar?' : 'Excluir';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${ret.data}</td>
@@ -822,6 +870,9 @@
         <td>${formatarMoeda(ret.valorUnitario)}</td>
         <td><strong>${formatarMoeda(ret.valorRetirada)}</strong></td>
         <td>${ret.observacao || '-'}</td>
+        <td class="actions-cell">
+          <button type="button" class="btn btn-delete" onclick="excluirRetirada(${realIndex}, ${rowSheet})">${textoBtn}</button>
+        </td>
       `;
       corpo.appendChild(tr);
     });
