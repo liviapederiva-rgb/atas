@@ -412,7 +412,7 @@
 </div>
 
 <script>
-  const GOOGLE_SHEETS_URL = 'https://script.google.com/a/macros/lajeado.rs.gov.br/s/AKfycbwkkQL1JRWVs17jAeEIfQeeLKNwW_PeKDGzg7F9FO_ilOfOJIjIPDgjVwm9_YJ0aoeD/exec';
+  const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyGkTuMCSTbYW7Nt-QrCANoIiRCKMt8bH0NrxoJCeBAjDg1f8fEinMIpcvsc0y9f9tM/exec';
 
   let itens = [];
   let retiradas = [];
@@ -469,8 +469,14 @@
   }
 
   function carregarDoSheets() {
-    fetch(GOOGLE_SHEETS_URL)
-      .then(res => res.json())
+    fetch(GOOGLE_SHEETS_URL, {
+      method: 'GET',
+      redirect: 'follow'
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Erro HTTP ' + res.status);
+        return res.json();
+      })
       .then(dados => {
         if (Array.isArray(dados)) {
           itens = dados;
@@ -484,7 +490,9 @@
         preencherSelectItens();
         atualizarCardsResumo();
       })
-      .catch(() => {
+      .catch(erro => {
+        console.error('Erro ao carregar do Sheets:', erro);
+        mostrarStatus('Não foi possível ler os dados dessa URL. Verifique se ela retorna JSON ou abra diretamente o link do Apps Script.', 'error');
         renderizarTabelaItens();
       });
   }
